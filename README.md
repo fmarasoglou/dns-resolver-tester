@@ -317,3 +317,7 @@ go build -o dnsresolvertest .
 | `Dockerfile` | `build`, `runtime` and `test` targets |
 | `docker-compose.yml` | `tester` and `test` services |
 | `.github/workflows/weekly-resolvers.yml` | weekly check that publishes `working.txt` |
+
+---
+
+This is tooling used for [primitive.host](https://primitive.host).
