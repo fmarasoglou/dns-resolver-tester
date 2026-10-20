@@ -1,0 +1,5 @@
+# the compiled binary
+dnsresolvertest
+
+# your own resolver list, keep it out of the repository
+resolvers.txt
