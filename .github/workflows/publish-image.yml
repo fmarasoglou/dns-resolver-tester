@@ -51,3 +51,6 @@ jobs:
             org.opencontainers.image.revision=${{ github.sha }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
+          # Docker Hub rejects the OCI provenance attestation that
+          # buildx attaches by default when pushing.
+          provenance: false
