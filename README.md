@@ -147,6 +147,25 @@ docker build --target runtime -t dnsresolvertest .
 docker run --rm -v "$PWD":/resolvers dnsresolvertest -file /resolvers/mylist.txt
 ```
 
+### Or use the published image
+
+The very same image is published on
+[Docker Hub](https://hub.docker.com/r/fmarasoglou/dns-resolver-tester) and
+rebuilt on every merge into `main` by
+[`.github/workflows/publish-image.yml`](.github/workflows/publish-image.yml):
+
+```bash
+docker pull fmarasoglou/dns-resolver-tester:latest
+
+docker run --rm --user "$(id -u):$(id -g)" -v "$PWD":/resolvers \
+  fmarasoglou/dns-resolver-tester:latest -file /resolvers/mylist.txt
+```
+
+It is built from the same `runtime` stage as the local build above, so it
+behaves identically — same entry point, same flags. Every merge also pushes a
+`latest` and a commit SHA tag. If the repository is private, log in first with
+`docker login`.
+
 ---
 
 ## Public resolver lists (public-dns.info)
@@ -317,6 +336,7 @@ go build -o dnsresolvertest .
 | `Dockerfile` | `build`, `runtime` and `test` targets |
 | `docker-compose.yml` | `tester` and `test` services |
 | `.github/workflows/weekly-resolvers.yml` | weekly check that publishes `working.txt` |
+| `.github/workflows/publish-image.yml` | builds and pushes the image to Docker Hub on merge |
 
 ---
 
