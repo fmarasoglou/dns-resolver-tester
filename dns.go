@@ -1,11 +1,11 @@
 package main
 
 import (
+	"crypto/rand"
 	"encoding/binary"
 	"errors"
 	"fmt"
 	"io"
-	"math/rand"
 	"net"
 	"strings"
 	"time"
@@ -140,7 +140,13 @@ func readName(msg []byte, off int) (string, int, error) {
 // queryResolver asks a single resolver for the question over UDP, falling back
 // to TCP when the answer is truncated.
 func queryResolver(addr string, q question, timeout time.Duration) (*dnsResponse, time.Duration, error) {
-	id := uint16(rand.Intn(1 << 16))
+	// An unpredictable transaction ID keeps off-path packets from being
+	// mistaken for the answer.
+	var idBytes [2]byte
+	if _, err := rand.Read(idBytes[:]); err != nil {
+		return nil, 0, fmt.Errorf("random id: %w", err)
+	}
+	id := binary.BigEndian.Uint16(idBytes[:])
 	msg, err := buildQuery(id, q)
 	if err != nil {
 		return nil, 0, err
