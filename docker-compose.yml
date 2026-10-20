@@ -1,0 +1,18 @@
+services:
+  tester:
+    image: dnsresolvertest
+    build:
+      context: .
+      target: runtime
+    # run as the host user so files written with -out are not owned by root
+    user: "${UID:-1000}:${GID:-1000}"
+    volumes:
+      - ./:/resolvers
+    command: ["-fetch", "https://public-dns.info/nameservers.txt"]
+
+  test:
+    image: dnsresolvertest-test
+    build:
+      context: .
+      target: test
+    command: ["go", "test", "-v", "./..."]
