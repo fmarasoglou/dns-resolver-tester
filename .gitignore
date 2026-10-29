@@ -3,3 +3,4 @@ dnsresolvertest
 
 # your own resolver list, keep it out of the repository
 resolvers.txt
+dns-resolver-tester

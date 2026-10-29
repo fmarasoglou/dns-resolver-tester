@@ -126,6 +126,29 @@ A resolver that is merely slow counts as a failure, so an aggressive timeout
 turns slow-but-alive resolvers into `FAIL / timeout after 1s` rows. Raise the
 timeout before concluding that a resolver is dead.
 
+## Fabrication check (stage 1)
+
+`-canary` answers a different question than the default check: not "does it
+respond?" but **"does it invent records for names that cannot exist?"** — the
+fast-kill stage of the garbage-resolver detection design. Each resolver gets
+four must-fail lookups: a random label under the verified non-wildcard anchors
+`example.com` and `google.com`, plus an `zz<random>.invalid` name (RFC 6761)
+over A and AAAA. Records for any of them (NOERROR with answers) = fabricator.
+
+```bash
+docker compose run --rm tester -canary -file /resolvers/working.txt -out /resolvers/clean.txt
+```
+
+The clean list goes to stdout (or `-out`), the fabricator report and a summary
+to stderr, and the exit code is 1 when at least one fabricator was found, so CI
+can gate on it. First run over the shipped `working.txt` (5,790 resolvers):
+58 s → 4,960 clean, 22 fabricators dropped, 808 silent.
+
+Operational note: fabricators that were flagged tend to stop answering the
+probing host afterwards (they still answered a second vantage point, which is
+where they were re-confirmed fabricating) — re-verify flags from a second
+source before treating silence as a retraction.
+
 ## IP family
 
 `-family` decides which addresses are checked:
