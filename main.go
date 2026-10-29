@@ -31,6 +31,7 @@ type options struct {
 	onlyOK      bool
 	outFile     string
 	family      string
+	canary      bool
 	fetch       stringList
 }
 
@@ -61,6 +62,7 @@ func run(args []string, out, errOut io.Writer) int {
 	fs.StringVar(&o.outFile, "out", "", "write the output to this file instead of stdout")
 	fs.Var(&o.fetch, "fetch", "URL of a plain text resolver list to download (can be given more than once)")
 	fs.StringVar(&o.family, "family", "ipv4", "IP family to check: ipv4, ipv6 or any")
+	fs.BoolVar(&o.canary, "canary", false, "stage-1 fabrication check: ask each resolver only for names that cannot exist and drop it if it answers with records (clean list on stdout/-out, report on stderr; exit 1 when fabricators are found)")
 	fs.Usage = func() {
 		fmt.Fprintf(out, "usage: dnsresolvertest [flags] [resolver ...]\n\n")
 		fs.PrintDefaults()
@@ -120,6 +122,29 @@ func run(args []string, out, errOut io.Writer) int {
 	if len(entries) == 0 {
 		fs.Usage()
 		return 2
+	}
+
+	if o.canary {
+		// Clean list to -out or stdout, fabricator report + summary to stderr,
+		// so the list keeps the same pipeable contract as -only-ok.
+		canaryListOut := out
+		if o.outFile != "" {
+			f, err := os.Create(o.outFile)
+			if err != nil {
+				fmt.Fprintf(errOut, "error: %v\n", err)
+				return 2
+			}
+			defer f.Close()
+			canaryListOut = f
+		}
+		cres := checkCanaries(entries, o.timeout, o.concurrency)
+		printCanaries(canaryListOut, errOut, cres)
+		for _, r := range cres {
+			if r.fabricated {
+				return 1
+			}
+		}
+		return 0
 	}
 
 	results := checkAll(entries, question{name: o.domain, qtype: qtype}, o.timeout, o.concurrency)
