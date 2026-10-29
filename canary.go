@@ -134,7 +134,7 @@ func printCanaries(out, summaryOut io.Writer, results []canaryResult) {
 	}
 	sort.Slice(fabricators, func(i, j int) bool { return lessIP(fabricators[i].addr, fabricators[j].addr) })
 	for _, r := range fabricators {
-		fmt.Fprintf(summaryOut, "fabricator %s: %s\n", r.addr, r.detail)
+		fmt.Fprintf(summaryOut, "fabricator %s: %s\n", stripDefaultPort(r.addr), r.detail)
 	}
 	fmt.Fprintf(summaryOut, "\ncanary check: %d/%d clean, %d fabricators dropped, %d silent\n",
 		len(clean), len(results), len(fabricators), silent)

@@ -144,10 +144,11 @@ to stderr, and the exit code is 1 when at least one fabricator was found, so CI
 can gate on it. First run over the shipped `working.txt` (5,790 resolvers):
 58 s → 4,960 clean, 22 fabricators dropped, 808 silent.
 
-Operational note: fabricators that were flagged tend to stop answering the
-probing host afterwards (they still answered a second vantage point, which is
-where they were re-confirmed fabricating) — re-verify flags from a second
-source before treating silence as a retraction.
+Operational note: the check is repeatable — an immediate re-run with fresh
+random canaries re-flagged 21 of 22 fabricators from the same host (one was
+transiently silent), and two were independently re-confirmed fabricating from a
+second network. Report lines are bare IPs, so the fabricator list can be fed
+straight back into `-canary` or `-file` for verification runs.
 
 ## IP family
 
