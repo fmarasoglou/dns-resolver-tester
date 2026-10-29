@@ -41,7 +41,7 @@ jobs:
             -family ipv4 \
             -timeout "$TIMEOUT" \
             -concurrency 256 \
-            -only-ok -out /resolvers/working.txt
+            -only-ok -out /resolvers/working.responded.txt
           status=$?
           set -e
           # 0 = everything answered, 1 = some resolvers did not answer (normal)
@@ -49,6 +49,32 @@ jobs:
             echo "::error::the check failed with exit code $status"
             exit "$status"
           fi
+
+      # Stage-1 fabrication check (research §13): working.txt = responders
+      # minus fabricators. Resolvers that answer must-fail names with records
+      # poison NXDOMAIN-based existence checks downstream, so they are dropped
+      # here — the report lands in the run log (fabricators listed as bare IPs).
+      - name: Drop fabricators (NXDOMAIN canaries)
+        env:
+          TIMEOUT: ${{ github.event.inputs.timeout || '2s' }}
+        run: |
+          set +e
+          docker run --rm --user "$(id -u):$(id -g)" -v "$PWD":/resolvers \
+            dnsresolvertest \
+            -canary \
+            -file /resolvers/working.responded.txt \
+            -timeout "$TIMEOUT" \
+            -concurrency 256 \
+            -out /resolvers/working.txt
+          status=$?
+          set -e
+          # 0 = no fabricators, 1 = fabricators were found and dropped (the
+          # filter working as intended), >1 = usage error
+          if [ "$status" -gt 1 ]; then
+            echo "::error::the canary check failed with exit code $status"
+            exit "$status"
+          fi
+          rm -f /resolvers/working.responded.txt
 
       - name: Commit the working list
         run: |
